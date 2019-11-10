@@ -8,15 +8,17 @@ bn_momentum = 0.9
 
 
 def conv3x3(in_planes, out_planes, stride=1):
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=True)
+    return nn.Conv2d(
+        in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=True
+    )
 
 
 def conv_init(m):
     classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
+    if classname.find("Conv") != -1:
         init.xavier_uniform_(m.weight, gain=np.sqrt(2))
         init.constant_(m.bias, 0)
-    elif classname.find('BatchNorm') != -1:
+    elif classname.find("BatchNorm") != -1:
         init.constant_(m.weight, 1)
         init.constant_(m.bias, 0)
 
@@ -28,7 +30,9 @@ class WideBasic(nn.Module):
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, padding=1, bias=True)
         self.dropout = nn.Dropout(p=dropout_rate)
         self.bn2 = nn.BatchNorm2d(planes, momentum=bn_momentum)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=True)
+        self.conv2 = nn.Conv2d(
+            planes, planes, kernel_size=3, stride=stride, padding=1, bias=True
+        )
 
         self.shortcut = nn.Sequential()
         if stride != 1 or in_planes != planes:
@@ -49,11 +53,11 @@ class WideResNet(nn.Module):
         super(WideResNet, self).__init__()
         self.in_planes = 16
 
-        assert ((depth - 4) % 6 == 0), 'Wide-resnet depth should be 6n+4'
+        assert (depth - 4) % 6 == 0, "Wide-resnet depth should be 6n+4"
         n = int((depth - 4) / 6)
         k = widen_factor
 
-        nStages = [16, 16*k, 32*k, 64*k]
+        nStages = [16, 16 * k, 32 * k, 64 * k]
 
         self.conv1 = conv3x3(3, nStages[0])
         self.layer1 = self._wide_layer(WideBasic, nStages[1], n, dropout_rate, stride=1)
@@ -65,7 +69,7 @@ class WideResNet(nn.Module):
         # self.apply(conv_init)
 
     def _wide_layer(self, block, planes, num_blocks, dropout_rate, stride):
-        strides = [stride] + [1]*(num_blocks-1)
+        strides = [stride] + [1] * (num_blocks - 1)
         layers = []
 
         for stride in strides:

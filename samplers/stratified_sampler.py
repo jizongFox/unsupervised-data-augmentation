@@ -34,7 +34,7 @@ def fisherYatesShuffle(arr):
      j ← random integer such that 0 ≤ j ≤ i
      exchange a[j] and a[i]
     """
-    for i in range(len(arr)-1, 0, -1):
+    for i in range(len(arr) - 1, 0, -1):
         j = random.randint(0, i)
         arr[i], arr[j] = arr[j], arr[i]
     return arr
@@ -54,15 +54,17 @@ def spotifyShuffle(songs_list, artists_list):
 
 
 def argsort(seq):
-    return [i for i, j in sorted(enumerate(seq), key=lambda x:x[1])]
+    return [i for i, j in sorted(enumerate(seq), key=lambda x: x[1])]
 
 
 def get_locs(n):
-    percent = 1. / n
+    percent = 1.0 / n
     locs = [percent * random.random()]
     last = locs[0]
     for i in range(n - 1):
-        value = last + percent * random.uniform(0.8, 1.2)  # 25% : 20~30% = 1 : 0.8x~1.2x
+        value = last + percent * random.uniform(
+            0.8, 1.2
+        )  # 25% : 20~30% = 1 : 0.8x~1.2x
         locs.append(value)
         last = value
     return locs

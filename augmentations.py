@@ -2,7 +2,10 @@
 # https://github.com/rpmcruz/autoaugment/blob/master/transformations.py
 import random
 
-import PIL, PIL.ImageOps, PIL.ImageEnhance, PIL.ImageDraw
+import PIL
+import PIL.ImageDraw
+import PIL.ImageEnhance
+import PIL.ImageOps
 import numpy as np
 
 random_mirror = True
@@ -114,7 +117,7 @@ def Sharpness(img, v):  # [0.1,1.9]
 
 def Cutout(img, v):  # [0, 60] => percentage: [0, 0.2]
     assert 0.0 <= v <= 0.2
-    if v <= 0.:
+    if v <= 0.0:
         return img
 
     v = v * img.size[0]
@@ -138,8 +141,8 @@ def CutoutAbs(img, v):  # [0, 60] => percentage: [0, 0.2]
     x0 = np.random.uniform(w)
     y0 = np.random.uniform(h)
 
-    x0 = int(max(0, x0 - v / 2.))
-    y0 = int(max(0, y0 - v / 2.))
+    x0 = int(max(0, x0 - v / 2.0))
+    y0 = int(max(0, y0 - v / 2.0))
     x1 = min(w, x0 + v)
     y1 = min(h, y0 + v)
 
