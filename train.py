@@ -302,7 +302,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataroot",
         type=str,
-        default="/data/private/pretrainedmodels",
+        default="./.data",
         help="torchvision data folder",
     )
     parser.add_argument("--save", type=str, default="")
