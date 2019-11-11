@@ -4,7 +4,7 @@ dataset: cifar10
 aug: fa_reduced_cifar10   # autoaug_extend
 cutout: 16
 batch: 32
-batch_unsup: 960
+batch_unsup: 512
 ratio_unsup: 5.0
 ratio_mode: 'constant'
 epoch: 1600

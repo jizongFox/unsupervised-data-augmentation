@@ -96,10 +96,10 @@ def run_epoch(
 
         if optimizer:
             loss.backward()
-            if C.get()["optimizer"].get("clip", 5) > 0:
-                nn.utils.clip_grad_norm_(
-                    model.parameters(), C.get()["optimizer"].get("clip", 5)
-                )
+            # if C.get()["optimizer"].get("clip", 5) > 0:
+            #     nn.utils.clip_grad_norm_(
+            #         model.parameters(), C.get()["optimizer"].get("clip", 5)
+            #     )
 
             optimizer.step()
             optimizer.zero_grad()

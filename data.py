@@ -98,7 +98,7 @@ def get_dataloaders(dataset, batch, batch_unsup, dataroot):
             n_splits=1, test_size=46000, random_state=0
         )  # 4000 trainset
         sss = sss.split(list(range(len(total_trainset))), total_trainset.targets)
-        train_idx, valid_idx = next(sss)
+        train_idx, valid_idx = next(sss) # len(train_idx)==4000 len(valid_idx)==46000
         train_labels = [total_trainset.targets[idx] for idx in train_idx]
 
         trainset = Subset(total_trainset, train_idx)  # for supervised
