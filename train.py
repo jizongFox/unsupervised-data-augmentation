@@ -57,6 +57,7 @@ def run_epoch(
             data, label = data.cuda(), label.cuda()
             preds = model(data)
             loss = loss_fn(preds, label)  # loss for supervised learning
+            loss_kldiv = torch.tensor(0).float().cuda()
         else:
             label = label.cuda()
             try:
