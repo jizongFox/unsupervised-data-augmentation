@@ -5,19 +5,17 @@ import os
 from collections import OrderedDict
 
 import torch
+from theconf import Config as C, ConfigArgumentParser
 from torch import nn, optim
 from torch.nn.functional import kl_div, softmax, log_softmax
-
 from tqdm import tqdm
-from theconf import Config as C, ConfigArgumentParser
+from warmup_scheduler import GradualWarmupScheduler
 
+from clustering_loss import IIDLoss
 from common import get_logger
 from data import get_dataloaders
 from metrics import accuracy, Accumulator
 from networks import get_model, num_class
-
-from warmup_scheduler import GradualWarmupScheduler
-
 
 logger = get_logger("Unsupervised Data Augmentation")
 logger.setLevel(logging.INFO)
@@ -26,17 +24,18 @@ best_valid_top1 = 0
 
 
 def run_epoch(
-    model,
-    loader_s,
-    loader_u,
-    loss_fn,
-    optimizer,
-    desc_default="",
-    epoch=0,
-    writer=None,
-    verbose=1,
-    unsupervised=False,
-    scheduler=None,
+        model,
+        loader_s,
+        loader_u,
+        loss_fn,
+        optimizer,
+        desc_default="",
+        epoch=0,
+        writer=None,
+        verbose=1,
+        unsupervised=False,
+        scheduler=None,
+        method="UDA",
 ):
     tqdm_disable = bool(os.environ.get("TASK_NAME", ""))
     if verbose:
@@ -71,35 +70,33 @@ def run_epoch(
             preds = preds_all[: len(data)]
             loss = loss_fn(preds, label)  # loss for supervised learning
 
-            preds_unsup = preds_all[len(data) :]
-            preds1, preds2 = torch.chunk(preds_unsup, 2)
-            preds1 = softmax(preds1, dim=1).detach()
-            preds2 = log_softmax(preds2, dim=1)
-            assert len(preds1) == len(preds2) == C.get()["batch_unsup"]
+            preds_unsup = preds_all[len(data):]
+            preds_logit_1, preds_logit_2 = torch.chunk(preds_unsup, 2)
 
-            loss_kldiv = kl_div(
-                preds2, preds1, reduction="none"
-            )  # loss for unsupervised
-            loss_kldiv = torch.sum(loss_kldiv, dim=1)
-            assert len(loss_kldiv) == len(unlabel1)
-            # loss += (epoch / 200. * C.get()['ratio_unsup']) * torch.mean(loss_kldiv)
-            if C.get()["ratio_mode"] == "constant":
-                loss += C.get()["ratio_unsup"] * torch.mean(loss_kldiv)
-            elif C.get()["ratio_mode"] == "gradual":
-                loss += (
-                    (epoch / float(C.get()["epoch"]))
-                    * C.get()["ratio_unsup"]
-                    * torch.mean(loss_kldiv)
-                )
+            if method == "UDA":
+                preds_softmax_1 = softmax(preds_logit_1, dim=1).detach()
+                preds_logsoftmax_2 = log_softmax(preds_logit_2, dim=1)
+                assert len(preds_softmax_1) == len(preds_logsoftmax_2) == C.get()["batch_unsup"]
+
+                loss_kldiv = kl_div(
+                    preds_logsoftmax_2, preds_softmax_1, reduction="none"
+                )  # loss for unsupervised
+                loss_kldiv = torch.sum(loss_kldiv, dim=1)
+                assert len(loss_kldiv) == len(unlabel1)
+            elif method == "IIC":
+                loss_kldiv, _ = IIDLoss()(preds_logit_1.softmax(1), preds_logit_2.softmax(1))
+                loss_kldiv = loss_kldiv * -1.0
             else:
-                raise ValueError
+                raise NotImplementedError
+            # loss += (epoch / 200. * C.get()['ratio_unsup']) * torch.mean(loss_kldiv)
+            loss += args.alpha * torch.mean(loss_kldiv)
 
         if optimizer:
             loss.backward()
-            # if C.get()["optimizer"].get("clip", 5) > 0:
-            #     nn.utils.clip_grad_norm_(
-            #         model.parameters(), C.get()["optimizer"].get("clip", 5)
-            #     )
+            if C.get()["optimizer"].get("clip", 5) > 0:
+                nn.utils.clip_grad_norm_(
+                    model.parameters(), C.get()["optimizer"].get("clip", 5)
+                )
 
             optimizer.step()
             optimizer.zero_grad()
@@ -111,6 +108,7 @@ def run_epoch(
                 "loss": loss.item() * len(data),
                 "top1": top1.item() * len(data),
                 "top5": top5.item() * len(data),
+                "reg": loss_kldiv.item() * len(data)
             }
         )
         cnt += len(data)
@@ -140,7 +138,7 @@ def run_epoch(
 
 
 def train_and_eval(
-    tag, dataroot, metric="last", save_path=None, only_eval=False, unsupervised=False
+        tag, dataroot, metric="last", save_path=None, only_eval=False, unsupervised=False
 ):
     max_epoch = C.get()["epoch"]
     trainloader, unsuploader, testloader = get_dataloaders(
@@ -214,9 +212,10 @@ def train_and_eval(
             desc_default="*test",
             epoch=epoch_start,
             writer=writers[1],
+            method=args.method,
         )
         for key, setname in itertools.product(
-            ["loss", "top1", "top5"], ["train", "test"]
+                ["loss", "top1", "top5"], ["train", "test"]
         ):
             result["%s_%s" % (key, setname)] = rs[setname][key]
         result["epoch"] = 0
@@ -240,14 +239,15 @@ def train_and_eval(
             verbose=True,
             unsupervised=unsupervised,
             scheduler=scheduler,
+            method=args.method,
         )
         if math.isnan(rs["train"]["loss"]):
             raise Exception("train loss is NaN.")
 
         model.eval()
         if (
-            epoch % (10 if "cifar" in C.get()["dataset"] else 30) == 0
-            or epoch == max_epoch
+                epoch % (10 if "cifar" in C.get()["dataset"] else 30) == 0
+                or epoch == max_epoch
         ):
             rs["test"] = run_epoch(
                 model,
@@ -259,6 +259,7 @@ def train_and_eval(
                 epoch=epoch,
                 writer=writers[1],
                 verbose=True,
+                method=args.method
             )
 
             if best_valid_top1 < rs["test"]["top1"]:
@@ -268,7 +269,7 @@ def train_and_eval(
                 if metric != "last":
                     best_valid_loss = rs[metric]["loss"]
                 for key, setname in itertools.product(
-                    ["loss", "top1", "top5"], ["train", "test"]
+                        ["loss", "top1", "top5"], ["train", "test"]
                 ):
                     result["%s_%s" % (key, setname)] = rs[setname][key]
                 result["epoch"] = epoch
@@ -306,14 +307,16 @@ if __name__ == "__main__":
         help="torchvision data folder",
     )
     parser.add_argument("--save", type=str, default="")
+    parser.add_argument("--method", type=str, choices=["UDA", "IIC"], default="UDA")
     parser.add_argument("--decay", type=float, default=-1)
     parser.add_argument("--unsupervised", action="store_true")
     parser.add_argument("--only-eval", action="store_true")
+    parser.add_argument("--alpha",type=float, default=5.0)
     args = parser.parse_args()
 
     assert (
-        args.only_eval and not args.save
-    ) or not args.only_eval, "checkpoint path not provided in evaluation mode."
+                   args.only_eval and not args.save
+           ) or not args.only_eval, "checkpoint path not provided in evaluation mode."
 
     if args.decay > 0:
         logger.info("decay reset=%.8f" % args.decay)
