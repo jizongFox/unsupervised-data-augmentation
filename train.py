@@ -109,7 +109,7 @@ def run_epoch(
                 "loss": loss.item() * len(data),
                 "top1": top1.item() * len(data),
                 "top5": top5.item() * len(data),
-                "reg": loss_kldiv.item() * len(data)
+                "reg": loss_kldiv.mean().item() * len(data)
             }
         )
         cnt += len(data)
@@ -247,7 +247,7 @@ def train_and_eval(
 
         model.eval()
         if (
-                epoch % (10 if "cifar" in C.get()["dataset"] else 30) == 0
+                epoch % (1 if "cifar" in C.get()["dataset"] else 30) == 0
                 or epoch == max_epoch
         ):
             rs["test"] = run_epoch(
