@@ -86,7 +86,6 @@ def run_epoch(
                 assert len(loss_kldiv) == len(unlabel1)
             elif method == "IIC":
                 loss_kldiv, _ = IIDLoss()(preds_logit_1.softmax(1), preds_logit_2.softmax(1))
-                loss_kldiv = loss_kldiv * -1.0
             else:
                 raise NotImplementedError
             # loss += (epoch / 200. * C.get()['ratio_unsup']) * torch.mean(loss_kldiv)
