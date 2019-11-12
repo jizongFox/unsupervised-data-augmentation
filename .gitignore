@@ -108,3 +108,7 @@ venv.bak/
 ven/
 .data
 
+logs/
+tmp.sh
+
+

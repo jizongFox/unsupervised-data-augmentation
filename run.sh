@@ -23,7 +23,7 @@ declare -a StringArray=(
 "python train.py -c confs/wresnet28x2.yaml --unsupervised --save=IIC_10 --tag=IIC_10 --method=IIC --alpha=10"
 
 )
-gpuqueue "${StringArray[@]}" --available_gpus 0 1
+#gpuqueue "${StringArray[@]}" --available_gpus 0 1
 for cmd in "${StringArray[@]}"
 do
 echo ${cmd}
