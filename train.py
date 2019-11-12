@@ -194,7 +194,7 @@ def train_and_eval(
 
     result = OrderedDict()
     epoch_start = 1
-    if save_path and os.path.exists(save_path):
+    if save_path and os.path.exists(save_path) and (args.resume == True):
         data = torch.load(save_path)
         model.load_state_dict(data["model"])
         optimizer.load_state_dict(data["optimizer"])
@@ -312,7 +312,8 @@ if __name__ == "__main__":
     parser.add_argument("--decay", type=float, default=-1)
     parser.add_argument("--unsupervised", action="store_true")
     parser.add_argument("--only-eval", action="store_true")
-    parser.add_argument("--alpha",type=float, default=5.0)
+    parser.add_argument("--alpha", type=float, default=5.0)
+    parser.add_argument("--resume", default=False, action="store_true")
     args = parser.parse_args()
 
     assert (
