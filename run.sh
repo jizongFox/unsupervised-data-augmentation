@@ -14,19 +14,19 @@ dataset=cifar10
 account=rrg-mpederso
 labeled_sample=250
 declare -a StringArray=(
-"python train.py -c confs/wresnet28x2.yaml --unsupervised --save=${labeled_sample}/UDA --tag=${labeled_sample}/UDA --method=UDA --resume"
-"python train.py -c confs/wresnet28x2.yaml --save=baseline --tag=${labeled_sample}/baseline --method=UDA"
-"python train.py -c confs/wresnet28x2.yaml --unsupervised --save=${labeled_sample}/IIC_0.1 --tag=${labeled_sample}/IIC_0.1 --method=IIC --alpha=0.1"
-"python train.py -c confs/wresnet28x2.yaml --unsupervised --save=${labeled_sample}/IIC_1 --tag=${labeled_sample}/IIC_1 --method=IIC --alpha=1"
-"python train.py -c confs/wresnet28x2.yaml --unsupervised --save=${labeled_sample}/IIC_2 --tag=${labeled_sample}/IIC_2 --method=IIC --alpha=2"
-"python train.py -c confs/wresnet28x2.yaml --unsupervised --save=${labeled_sample}/IIC_5 --tag=${labeled_sample}/IIC_5 --method=IIC --alpha=5"
-"python train.py -c confs/wresnet28x2.yaml --unsupervised --save=${labeled_sample}/IIC_10 --tag=${labeled_sample}/IIC_10 --method=IIC --alpha=10"
+"python train.py -c confs/wresnet28x2.yaml --unsupervised --save=${labeled_sample}/UDA --tag=${labeled_sample}/UDA --method=UDA --labeled_sample_num=${labeled_sample} "
+"python train.py -c confs/wresnet28x2.yaml --save=baseline --tag=${labeled_sample}/baseline --method=UDA --labeled_sample_num=${labeled_sample} "
+"python train.py -c confs/wresnet28x2.yaml --unsupervised --save=${labeled_sample}/IIC_0.1 --tag=${labeled_sample}/IIC_0.1 --method=IIC --alpha=0.1 --labeled_sample_num=${labeled_sample}  "
+"python train.py -c confs/wresnet28x2.yaml --unsupervised --save=${labeled_sample}/IIC_1 --tag=${labeled_sample}/IIC_1 --method=IIC --alpha=1 --labeled_sample_num=${labeled_sample} "
+"python train.py -c confs/wresnet28x2.yaml --unsupervised --save=${labeled_sample}/IIC_2 --tag=${labeled_sample}/IIC_2 --method=IIC --alpha=2 --labeled_sample_num=${labeled_sample} "
+"python train.py -c confs/wresnet28x2.yaml --unsupervised --save=${labeled_sample}/IIC_5 --tag=${labeled_sample}/IIC_5 --method=IIC --alpha=5 --labeled_sample_num=${labeled_sample} "
+"python train.py -c confs/wresnet28x2.yaml --unsupervised --save=${labeled_sample}/IIC_10 --tag=${labeled_sample}/IIC_10 --method=IIC --alpha=10 --labeled_sample_num=${labeled_sample} "
 
 )
 #gpuqueue "${StringArray[@]}" --available_gpus 0 1
 for cmd in "${StringArray[@]}"
 do
 echo ${cmd}
-#CC_wrapper "${time}" "${account}" "${cmd}" 16
-local_wrapper "${cmd}"
+CC_wrapper "${time}" "${account}" "${cmd}" 16
+#local_wrapper "${cmd}"
 done

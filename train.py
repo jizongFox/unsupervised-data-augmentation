@@ -6,6 +6,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 import torch
+from deepclustering.dataloader import DataIter
 from theconf import Config as C, ConfigArgumentParser
 from torch import nn, optim
 from torch.nn.functional import kl_div, softmax, log_softmax
@@ -248,7 +249,7 @@ def train_and_eval(
 
         model.eval()
         if (
-                epoch % (1 if "cifar" in C.get()["dataset"] else 30) == 0
+                epoch % (10 if "cifar" in C.get()["dataset"] else 30) == 0
                 or epoch == max_epoch
         ):
             rs["test"] = run_epoch(
