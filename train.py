@@ -138,11 +138,11 @@ def run_epoch(
 
 
 def train_and_eval(
-        tag, dataroot, metric="last", save_path=None, only_eval=False, unsupervised=False
+        tag, dataroot, metric="last", save_path=None, only_eval=False, unsupervised=False, labeled_sample_num=4000,
 ):
     max_epoch = C.get()["epoch"]
     trainloader, unsuploader, testloader = get_dataloaders(
-        C.get()["dataset"], C.get()["batch"], C.get()["batch_unsup"], dataroot
+        C.get()["dataset"], C.get()["batch"], C.get()["batch_unsup"], dataroot, labeled_sample_num
     )
 
     # create a model & an optimizer
@@ -313,6 +313,7 @@ if __name__ == "__main__":
     parser.add_argument("--only-eval", action="store_true")
     parser.add_argument("--alpha", type=float, default=5.0)
     parser.add_argument("--resume", default=False, action="store_true")
+    parser.add_argument("--labeled_sample_num", default=4000, type=int)
     args = parser.parse_args()
 
     assert (
@@ -335,6 +336,7 @@ if __name__ == "__main__":
         save_path=args.save,
         only_eval=args.only_eval,
         unsupervised=args.unsupervised,
+        labeled_sample_num=args.labeled_sample_num
     )
     elapsed = time.time() - t
 

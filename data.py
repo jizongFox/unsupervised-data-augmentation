@@ -16,7 +16,7 @@ logger = get_logger("Unsupervised Data Augmentation")
 logger.setLevel(logging.INFO)
 
 
-def get_dataloaders(dataset, batch, batch_unsup, dataroot):
+def get_dataloaders(dataset, batch, batch_unsup, dataroot, labeled_sample_num=4000):
     if "cifar" in dataset:
         transform_train = transforms.Compose(
             [
@@ -95,7 +95,7 @@ def get_dataloaders(dataset, batch, batch_unsup, dataroot):
             raise ValueError
 
         sss = StratifiedShuffleSplit(
-            n_splits=1, test_size=46000, random_state=0
+            n_splits=1, test_size=50000-labeled_sample_num, random_state=0
         )  # 4000 trainset
         sss = sss.split(list(range(len(total_trainset))), total_trainset.targets)
         train_idx, valid_idx = next(sss) # len(train_idx)==4000 len(valid_idx)==46000
