@@ -3,6 +3,7 @@ import logging
 import math
 import os
 from collections import OrderedDict
+from pathlib import Path
 
 import torch
 from theconf import Config as C, ConfigArgumentParser
@@ -198,6 +199,7 @@ def train_and_eval(
         model.load_state_dict(data["model"])
         optimizer.load_state_dict(data["optimizer"])
         epoch_start = data["epoch"]
+        print("load sucessfully")
 
     if only_eval:
         logger.info("evaluation only+")
@@ -325,6 +327,7 @@ if __name__ == "__main__":
         C.get()["optimizer"]["decay"] = args.decay
     if args.save:
         logger.info("checkpoint will be saved at %s", args.save)
+        Path(args.save).parent.mkdir(parents=True, exist_ok=True)
     logger.info("unsupervsed=%s", args.unsupervised)
 
     import time
